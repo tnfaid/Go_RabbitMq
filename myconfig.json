@@ -1,0 +1,8 @@
+{
+  "rabbit": {
+    "queue_name": "queue_fulfillment0",
+    "queue_durable": true,
+    "queue_url": "amqp://guest:guest@localhost:5672/"
+  }
+
+}
