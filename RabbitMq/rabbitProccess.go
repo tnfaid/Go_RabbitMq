@@ -1,48 +1,23 @@
-package main
+package rabbitmq
 
 import (
 	"context"
-	"github.com/creamdog/gonfig"
 	amqp "github.com/rabbitmq/amqp091-go"
+	handle "goland-tutorial-progress/GeneralFunction"
 	"log"
 	"os"
 	"strings"
 	"time"
 )
 
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Panicf("%s: %s", msg, err)
-	}
-}
-
-func main() {
-	f, err := os.Open("myconfig.json")
-	if err != nil {
-		// TODO: error handling
-	}
-	defer f.Close()
-	config, err := gonfig.FromJson(f)
-	if err != nil {
-		// TODO: error handling
-	}
-	queueName, err := config.GetString("rabbit/queue_name", "null")
-	queueUrl, err := config.GetString("rabbit/queue_url", "null")
-	queueDurable, err := config.GetBool("rabbit/queue_durable", false)
-
-	//consumeRabbit(queueName, queueUrl, queueDurable)
-	publishRabbit(queueName, queueUrl, queueDurable)
-
-}
-
-func consumeRabbit(queueName string, queueUrl string, queueDurable bool) {
+func ConsumeRabbit(queueName string, queueUrl string, queueDurable bool) {
 
 	conn, err := amqp.Dial(queueUrl)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	handle.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	handle.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
@@ -53,7 +28,7 @@ func consumeRabbit(queueName string, queueUrl string, queueDurable bool) {
 		false,        // no-wait
 		nil,          // arguments
 	)
-	failOnError(err, "Failed to declare a queue")
+	handle.FailOnError(err, "Failed to declare a queue")
 
 	msgs, err := ch.Consume(
 		q.Name, // queue
@@ -64,7 +39,7 @@ func consumeRabbit(queueName string, queueUrl string, queueDurable bool) {
 		false,  // no-wait
 		nil,    // args
 	)
-	failOnError(err, "Failed to register a consumer")
+	handle.FailOnError(err, "Failed to register a consumer")
 
 	var forever chan struct{}
 
@@ -78,13 +53,13 @@ func consumeRabbit(queueName string, queueUrl string, queueDurable bool) {
 	<-forever
 }
 
-func publishRabbit(queueName string, queueUrl string, queueDurable bool) {
+func PublishRabbit(queueName string, queueUrl string, queueDurable bool) {
 	conn, err := amqp.Dial(queueUrl)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	handle.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	handle.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
@@ -96,7 +71,7 @@ func publishRabbit(queueName string, queueUrl string, queueDurable bool) {
 		false,        // no-wait
 		nil,          // arguments
 	)
-	failOnError(err, "Failed to declare an exchange")
+	handle.FailOnError(err, "Failed to declare an exchange")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -111,7 +86,7 @@ func publishRabbit(queueName string, queueUrl string, queueDurable bool) {
 			ContentType: "text/plain",
 			Body:        []byte(body),
 		})
-	failOnError(err, "Failed to publish a message")
+	handle.FailOnError(err, "Failed to publish a message")
 
 	log.Printf(" [x] Sent %s", body)
 }
